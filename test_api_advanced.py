@@ -82,6 +82,31 @@ class RedditTests(unittest.TestCase):
         self.assertEqual(output, "\n".join(titles[:10]) + "\n")
         self.assertEqual(get.call_args[1].get("params").get("limit"), 10)
 
+    def test_minimal_requests_interface(self):
+        """Support test clients implementing the exercise's request options."""
+        for status in (200, 404):
+            for index in range(4):
+                data = {"subscribers": 12} if index == 0 else {
+                    "children": [{"data": {"title": "java"}}], "after": None}
+
+                def get(url, headers=None, params=None, allow_redirects=True):
+                    return response(status=status, data=data)
+
+                with patch("requests.get", get):
+                    args = ("test", ["java"]) if index == 3 else ("test",)
+                    result, output = self.capture(index, *args)
+                if status == 404:
+                    self.assertEqual(result, 0 if index == 0 else None)
+                    self.assertEqual(output, "None\n" if index == 1 else "")
+                elif index == 0:
+                    self.assertEqual((result, output), (12, ""))
+                elif index == 1:
+                    self.assertEqual((result, output), (None, "java\n"))
+                elif index == 2:
+                    self.assertEqual((result, output), (["java"], ""))
+                else:
+                    self.assertEqual((result, output), (None, "java: 1\n"))
+
     def test_recursive_pagination(self):
         """Follow every after cursor, including an empty intermediate page."""
         pages = [response(["First", "Second"], "t3_next"),

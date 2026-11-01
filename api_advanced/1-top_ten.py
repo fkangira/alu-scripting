@@ -18,7 +18,7 @@ def top_ten(subreddit):
         response = requests.get(
             "{}/r/{}/hot.json".format(base_url, subreddit),
             headers=headers, params={"limit": 10},
-            allow_redirects=False, timeout=15)
+            allow_redirects=False)
         if response.status_code != 200:
             print(None)
             return
