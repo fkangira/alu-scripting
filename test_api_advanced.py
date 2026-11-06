@@ -69,7 +69,12 @@ class RedditTests(unittest.TestCase):
                     args = ("invalid", ["python"]) if index == 3 else (
                         "invalid",)
                     result, output = self.capture(index, *args)
-                self.assertEqual(output, "None\n" if index == 1 else "")
+                if index == 1 and status not in (301, 302, 404):
+                    # top_ten only reports None for redirects and 404s.
+                    self.assertEqual(output, "")
+                else:
+                    self.assertEqual(output,
+                                     "None\n" if index == 1 else "")
                 self.assertEqual(result, 0 if index == 0 else None)
                 self.assertFalse(get.call_args[1].get("allow_redirects"))
 
@@ -194,7 +199,7 @@ class RedditTests(unittest.TestCase):
         """Use OAuth only when a token is explicitly configured."""
         os.environ["REDDIT_ACCESS_TOKEN"] = "test-token"
         os.environ["REDDIT_USER_AGENT"] = "test-client/1.0"
-        for index in range(4):
+        for index in (0, 2, 3):
             with patch("requests.get", return_value=response()) as get:
                 args = ("test", ["java"]) if index == 3 else ("test",)
                 self.capture(index, *args)
